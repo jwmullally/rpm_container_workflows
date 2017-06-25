@@ -33,7 +33,7 @@ function new {
 function up {
     common_start
     prechecks
-    $CLUSTER_UP --use-existing
+    $CLUSTER_UP --use-existing-config
 }
 
 function down {
