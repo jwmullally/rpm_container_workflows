@@ -1,0 +1,146 @@
+kind: List
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: hello-container
+    labels:
+      app: hello-container
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: hello-container
+    labels:
+      app: hello-container
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'hello-container:latest'
+    source:
+      type: Binary
+      dockerfile: |
+        FROM centos:7
+        COPY *.rpm /tmp/rpms/
+        #RUN yum install -y python && \
+        #  yum clean all -y
+        RUN yum install -y /tmp/rpms/*.rpm
+        RUN mkdir -p /var/www/cgi-bin && ln -s /usr/bin/hello /var/www/cgi-bin/hello
+        WORKDIR /var/www
+        USER 1001
+        EXPOSE 8000
+        ENTRYPOINT ["/usr/bin/python", "-m", "CGIHTTPServer", "8000"]
+    strategy:
+      type: Docker
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: centos:7
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: hello-container
+    labels:
+      app: hello-container
+  spec:
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - hello-container
+          from:
+            kind: ImageStreamTag
+            name: hello-container:latest
+    replicas: 1
+    selector:
+      app: hello-container
+      deploymentconfig: hello-container
+    template:
+      metadata:
+        labels:
+          app: hello-container
+          deploymentconfig: hello-container
+        name: hello-container
+      spec:
+        containers:
+          - name: hello-container
+            image: ' '
+            ports:
+              - containerPort: 8000
+                protocol: TCP
+            livenessProbe:
+              httpGet:
+                path: /cgi-bin/hello
+                port: 8000
+                scheme: HTTP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: hello-container
+    labels:
+      app: hello-container
+  spec:
+    ports:
+      - name: 8000-tcp
+        protocol: TCP
+        port: 8000
+        targetPort: 8000
+    selector:
+      app: hello-container
+      deploymentconfig: hello-container
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: hello-container
+    labels:
+      app: hello-container
+  spec:
+    to:
+      kind: Service
+      name: hello-container
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: hello-container-pipeline
+    labels:
+      app: hello-container
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "hello-container", "namespace": "", "kind": "DeploymentConfig"}]'
+  spec:
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          node('rpmbuilder') {
+            stage('build-srpm') {
+              sh 'mkdir srpms'
+          
+              dir('hello') {
+                checkout([
+                  $class: 'GitSCM',
+                  branches: [[name: '*/master']],
+                  userRemoteConfigs: [[url: 'http://gogs:3000/developer/hello.git']]
+                ])
+                sh 'make -f Makefile.srpm'
+                sh 'cp -n build/SRPMS/*.src.rpm ../srpms/'
+              }
+          
+              archiveArtifacts artifacts: 'srpms/*.src.rpm'
+            }
+          
+            stage('build-rpm') {
+              sh '/usr/bin/mock --root=epel-7-x86_64 --verbose srpms/*.src.rpm'
+              dir('/var/lib/mock/epel-7-x86_64') {
+                archiveArtifacts artifacts: 'result/*'
+              }
+            }
+
+            stage('build-image') {
+              openshift.withCluster() {
+                openshift.startBuild("hello-container --from-dir /var/lib/mock/epel-7-x86_64/result --wait")
+              }
+            }
+          }
+  type: JenkinsPipeline
