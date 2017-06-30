@@ -1,7 +1,9 @@
-srpm:
+srpm: clean
 	mkdir -p build/SOURCES
-	tar --transform "s;^;hello/;" -zcvf build/SOURCES/hello.tar.gz src
-	rpmbuild --define "_topdir `pwd`/build/" --undefine "dist" -bs hello.spec
+	tar --exclude-vcs --exclude='./build' --transform "s;^./;hello/;" \
+		-zcvf build/SOURCES/hello.tar.gz ./
+	rpmbuild --define "_topdir `pwd`/build/" --undefine "dist" \
+		-bs hello.spec
 
 clean:
 	rm -rf build
