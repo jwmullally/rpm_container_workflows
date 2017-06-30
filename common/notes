@@ -1,0 +1,13 @@
+If Jenkins build jobs get stuck on this:
+    Still waiting to schedule task
+    Jenkins doesn’t have label rpmbuilder
+ 
+- Try restart Jenkins (scale to 0 then 1)
+- Check the logs to make sure this is showing:
+    INFO: Adding PodTemplate: jenkins-slave-rpmbuilder-centos7
+    ...
+    INFO: Started provisioning Kubernetes Pod Template from openshift with 1 executors. Remaining excess workload: 0
+    INFO: Created Pod: jenkins-slave-rpmbuilder-centos7-1b65dd09dc5
+
+- Check jenkins-slave-rpmbuilder-centos7 image has finished building
+- Cancel + restart the Jenkins build
