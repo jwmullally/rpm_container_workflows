@@ -14,7 +14,8 @@ function create {
     #oc process openshift//jenkins-persistent -l app=jenkins -o yaml | oc create -f -
     # Sometimes we get OOM on Jenkins with default 512Mi limit
     #oc patch deploymentconfig jenkins -p '{"spec":{"template":{"spec":{"containers":[{"name":"jenkins","resources":{"limits":{"memory":"1Gi"}}}]}}}}'
-    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml
+
+    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml --param=HOSTNAME=gogs.172.17.0.1.nip.io
 }
 
 function create_gogs_user {

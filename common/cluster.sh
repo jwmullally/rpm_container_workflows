@@ -2,8 +2,8 @@
 
 # Some helper functions for starting a test Openshift cluster
 
-CLUSTER_UP='oc cluster up --host-data-dir=/var/lib/origin/openshift.local.etcd ' 
-#CLUSTER_UP='oc cluster up --host-data-dir=/var/lib/origin/openshift.local.etcd --logging --metrics' 
+CLUSTER_UP='oc cluster up --host-data-dir=/var/lib/origin/openshift.local.etcd --public-hostname=172.17.0.1 --routing-suffix=172.17.0.1.nip.io'
+#CLUSTER_UP='oc cluster up --host-data-dir=/var/lib/origin/openshift.local.etcd --public-hostname=172.17.0.1 --routing-suffix=172.17.0.1.nip.io --logging --metrics'
 CALLER=`logname`
 
 function common_start {
@@ -19,6 +19,24 @@ function prechecks {
         echo "$RUNNING_NAMESERVERS"
         exit 1
     fi
+
+    # Tested on Fedora 25
+
+    # https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md#getting-started
+    # To let the internal services hit the public facing router addresses,
+    # add these:
+    #firewall-cmd --permanent --zone dockerc --add-port 80/tcp
+    #firewall-cmd --permanent --zone dockerc --add-port 443/tcp
+    #firewall-cmd --reload
+
+    # Debug firewall issues with:
+    #firewall-cmd --set-log-denied=all
+    #journalctl -k -f
+
+    # Optional: for nice looking DNS addresses (e.g. *.example.com),
+    #           use local dnsmasq server. See:
+    # https://developers.redhat.com/blog/2015/11/19/dns-your-openshift-v3-cluster/
+
 }
 
 function new {
