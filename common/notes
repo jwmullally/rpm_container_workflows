@@ -11,3 +11,14 @@ If Jenkins build jobs get stuck on this:
 
 - Check jenkins-slave-rpmbuilder-centos7 image has finished building
 - Cancel + restart the Jenkins build
+
+
+TODO: OpenShiftSync plugin removes the rpmbuilder template when the initial image build has finished? Restarting Jenkins picks it up OK.
+
+    Jun 30, 2017 5:11:54 PM io.fabric8.jenkins.openshiftsync.JenkinsUtils addPodTemplate
+    INFO: Adding PodTemplate: jenkins-slave-rpmbuilder-centos7
+    Jun 30, 2017 5:12:19 PM io.fabric8.jenkins.openshiftsync.JenkinsUtils removePodTemplate
+    INFO: Removing PodTemplate: jenkins-slave-rpmbuilder-centos7
+
+$ oc get istag jenkins-slave-rpmbuilder-centos7:latest --template={{.metadata.creationTimestamp}}; echo
+    2017-06-30T17:12:19Z

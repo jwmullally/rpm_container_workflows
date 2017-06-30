@@ -24,11 +24,21 @@ items:
       dockerfile: |
         FROM openshift/jenkins-slave-base-centos7
         USER root
-        RUN yum install -y make rpm-build mock && \
+        RUN yum -v repolist enabled && \
+            yum install -y \
+                make \
+                rpm-build \
+                nosync \
+                mock && \
             yum clean all -y && \
             adduser jenkins && \
             usermod -a -G root jenkins && \
-            usermod -a -G mock jenkins
+            usermod -a -G mock jenkins && \
+            echo -e "config_opts['nosync'] = True\n"\
+        "config_opts['plugin_conf']['root_cache_opts']['compress_program'] = ''\n"\
+        "config_opts['plugin_conf']['root_cache_opts']['extension'] = ''\n"\
+                > /etc/mock/site-defaults.cfg && \
+            sed -i 's/mockcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)/mockcmd)/' /usr/bin/mockchain
         USER jenkins
     strategy:
       type: Docker
@@ -64,6 +74,10 @@ items:
             <claimName>rpmbuilder-cache</claimName>
             <readOnly>false</readOnly>
           </org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
+          <org.csanchez.jenkins.plugins.kubernetes.volumes.EmptyDirVolume>
+            <mountPath>/var/lib/mock/</mountPath>
+            <memory>true</memory>
+          </org.csanchez.jenkins.plugins.kubernetes.volumes.EmptyDirVolume>
         </volumes>
         <containers>
           <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
