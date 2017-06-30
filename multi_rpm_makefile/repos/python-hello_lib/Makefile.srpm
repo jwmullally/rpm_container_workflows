@@ -1,0 +1,10 @@
+srpm: clean
+	mkdir -p build/SOURCES
+	tar --exclude-vcs --exclude='./build' \
+		--transform "s;^./;python-hello_lib/;" \
+		-zcvf build/SOURCES/python-hello_lib.tar.gz ./
+	rpmbuild --define "_topdir `pwd`/build/" --undefine "dist" \
+		-bs python-hello_lib.spec
+
+clean:
+	rm -rf build

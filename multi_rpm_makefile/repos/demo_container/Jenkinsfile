@@ -1,0 +1,34 @@
+node('rpmbuilder') {
+
+  stage('checkout-sources') {
+    checkout([
+      $class: 'GitSCM',
+      branches: [[name: '*/master']],
+      userRemoteConfigs: [[url: 'http://gogs.172.17.0.1.nip.io/developer/demo_container.git']]
+    ])
+    sh 'make repos'
+  }
+
+  stage('build-srpms') {
+    sh 'make srpms'
+    archiveArtifacts artifacts: 'srpms/'
+  }
+
+  stage('build-rpms') {
+    sh 'make rpms'
+    archiveArtifacts artifacts: 'rpms/'
+  }
+
+  stage('build-image') {
+    openshift.withCluster() {
+      sh 'cp -n Dockerfile rpms/'
+      openshift.startBuild("demo-container --from-dir rpms --wait")
+    }
+  }
+
+  stage('test-image') {
+    openshift.withCluster() {
+      sh './test.sh demo-container:8000'
+    }
+  }
+}

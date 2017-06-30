@@ -1,0 +1,10 @@
+srpm: clean
+	mkdir -p build/SOURCES
+	tar --exclude-vcs --exclude='./build' \
+		--transform "s;^./;python-demo_app/;" \
+		-zcvf build/SOURCES/python-demo_app.tar.gz ./
+	rpmbuild --define "_topdir `pwd`/build/" --undefine "dist" \
+		-bs python-demo_app.spec
+
+clean:
+	rm -rf build

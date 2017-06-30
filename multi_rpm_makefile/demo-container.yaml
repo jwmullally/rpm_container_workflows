@@ -1,0 +1,108 @@
+kind: List
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: demo-container
+    labels:
+      app: demo-container
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: demo-container
+    labels:
+      app: demo-container
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'demo-container:latest'
+    source:
+      type: Binary
+    strategy:
+      type: Docker
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: centos:7
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: demo-container
+    labels:
+      app: demo-container
+  spec:
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - demo-container
+          from:
+            kind: ImageStreamTag
+            name: demo-container:latest
+    replicas: 1
+    selector:
+      app: demo-container
+      deploymentconfig: demo-container
+    template:
+      metadata:
+        labels:
+          app: demo-container
+          deploymentconfig: demo-container
+        name: demo-container
+      spec:
+        containers:
+          - name: demo-container
+            image: ' '
+            ports:
+              - containerPort: 8000
+                protocol: TCP
+            livenessProbe:
+              httpGet:
+                path: /
+                port: 8000
+                scheme: HTTP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: demo-container
+    labels:
+      app: demo-container
+  spec:
+    ports:
+      - name: 8000-tcp
+        protocol: TCP
+        port: 8000
+        targetPort: 8000
+    selector:
+      app: demo-container
+      deploymentconfig: demo-container
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: demo-container
+    labels:
+      app: demo-container
+  spec:
+    to:
+      kind: Service
+      name: demo-container
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: demo-container-pipeline
+    labels:
+      app: demo-container
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "demo-container", "namespace": "", "kind": "DeploymentConfig"}]'
+  spec:
+    source:
+      type: Git
+      git:
+        uri: "http://gogs.172.17.0.1.nip.io/developer/demo_container.git"
+    strategy:
+      jenkinsPipelineStrategy: {}
+  type: JenkinsPipeline
