@@ -23,9 +23,8 @@ items:
       dockerfile: |
         FROM centos:7
         COPY *.rpm /tmp/rpms/
-        #RUN yum install -y python && \
-        #  yum clean all -y
-        RUN yum install -y /tmp/rpms/*.rpm
+        RUN yum install -y /tmp/rpms/*.rpm && \
+            yum clean all -y
         RUN mkdir -p /var/www/cgi-bin && ln -s /usr/bin/hello /var/www/cgi-bin/hello
         WORKDIR /var/www
         USER 1001
@@ -114,22 +113,26 @@ items:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
           node('rpmbuilder') {
-            stage('build-srpm') {
-              sh 'mkdir srpms'
-          
+
+            stage('checkout-source') {
               dir('hello') {
                 checkout([
                   $class: 'GitSCM',
                   branches: [[name: '*/master']],
-                  userRemoteConfigs: [[url: 'http://gogs:3000/developer/hello.git']]
+                  userRemoteConfigs: [[url: 'http://gogs.172.17.0.1.nip.io/developer/hello.git']]
                 ])
+              }
+            }
+
+            stage('build-srpm') {
+              sh 'mkdir srpms'
+              dir('hello') {
                 sh 'make -f Makefile.srpm'
                 sh 'cp -n build/SRPMS/*.src.rpm ../srpms/'
               }
-          
               archiveArtifacts artifacts: 'srpms/*.src.rpm'
             }
-          
+
             stage('build-rpm') {
               sh '/usr/bin/mock --root=epel-7-x86_64 --verbose srpms/*.src.rpm'
               dir('/var/lib/mock/epel-7-x86_64') {
