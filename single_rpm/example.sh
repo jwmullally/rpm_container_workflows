@@ -3,6 +3,7 @@
 function create {
     oc project rpm-example
     oc create -f hello.yaml
+    create_repos
 }
 
 function create_repos {
@@ -22,6 +23,9 @@ function start_build {
 
 function delete {
     oc delete all -l app=hello-container
+    ENDPOINT=`oc get route gogs --template={{.spec.host}}`
+    curl "http://developer:developer@$ENDPOINT/api/v1/repos/developer/hello" -X DELETE
+
 }
 
 case $1 in

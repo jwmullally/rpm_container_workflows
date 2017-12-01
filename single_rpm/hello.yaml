@@ -25,7 +25,9 @@ items:
         COPY *.rpm /tmp/rpms/
         RUN yum install -y /tmp/rpms/*.rpm && \
             yum clean all -y
-        RUN mkdir -p /var/www/cgi-bin && ln -s /usr/bin/hello /var/www/cgi-bin/hello
+        RUN mkdir -p /var/www/cgi-bin && \
+            ln -s /usr/bin/hello /var/www/cgi-bin/hello && \
+            echo '<html><head><meta http-equiv="refresh" content="0; url=cgi-bin/hello"></head></html>' > /var/www/index.html
         WORKDIR /var/www
         USER 1001
         EXPOSE 8000
@@ -112,14 +114,14 @@ items:
     strategy:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
-          node('rpmbuilder') {
+          node('rpmbuilder-centos7') {
 
             stage('checkout-source') {
               dir('hello') {
                 checkout([
                   $class: 'GitSCM',
                   branches: [[name: '*/master']],
-                  userRemoteConfigs: [[url: 'http://gogs.172.17.0.1.nip.io/developer/hello.git']]
+                  userRemoteConfigs: [[url: 'http://gogs.rpm-example.svc.cluster.local:3000/developer/hello.git']]
                 ])
               }
             }

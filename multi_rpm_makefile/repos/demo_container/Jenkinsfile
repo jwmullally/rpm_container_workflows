@@ -1,10 +1,10 @@
-node('rpmbuilder') {
+node('rpmbuilder-centos7') {
 
   stage('checkout-sources') {
     checkout([
       $class: 'GitSCM',
       branches: [[name: '*/master']],
-      userRemoteConfigs: [[url: 'http://gogs.172.17.0.1.nip.io/developer/demo_container.git']]
+      userRemoteConfigs: [[url: 'http://gogs.rpm-example.svc.cluster.local:3000/developer/demo_container.git']]
     ])
     sh 'make repos'
   }

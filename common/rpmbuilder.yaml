@@ -5,10 +5,11 @@ items:
   kind: ImageStream
   metadata:
     name: jenkins-slave-rpmbuilder-centos7
-#    labels:
-#      role: jenkins-slave
-#    annotations:
-#      slave-label: rpmbuilder
+    # For automatic Jenkins detection, uncomment and delete ConfigMap
+    #labels:
+    #  role: jenkins-slave
+    #annotations:
+    #  slave-label: rpmbuilder-centos7
 - apiVersion: v1
   kind: BuildConfig
   metadata:
@@ -24,21 +25,45 @@ items:
       dockerfile: |
         FROM openshift/jenkins-slave-base-centos7
         USER root
+        # Install mock
+        #   mock speed optimizations
+        #   Let mock output directly to stdout,stderr under mockchain
+        #   Fix mock namespace unshare exception under Docker (fixed in 1.3.2-1)
+        #
+        # Make a mock root cache that can be used for every build
+        # TODO: This produces a tar file which bloats docker layers
+        #       -> Make mockchain reuse pre "--init" root
+        #          or make mock plugin for non-tar'd root caching
+        #          or untar and set /usr/local/bin/configure-slave to re-tar
         RUN yum -v repolist enabled && \
             yum install -y \
                 make \
                 rpm-build \
                 nosync \
+                nosync.x86 \
                 mock && \
             yum clean all -y && \
             adduser jenkins && \
             usermod -a -G root jenkins && \
             usermod -a -G mock jenkins && \
-            echo -e "config_opts['nosync'] = True\n"\
-        "config_opts['plugin_conf']['root_cache_opts']['compress_program'] = ''\n"\
-        "config_opts['plugin_conf']['root_cache_opts']['extension'] = ''\n"\
-                > /etc/mock/site-defaults.cfg && \
-            sed -i 's/mockcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)/mockcmd)/' /usr/bin/mockchain
+            echo -e "\
+        config_opts['nosync'] = True\n\
+        config_opts['nosync_force'] = True\n\
+        config_opts['plugin_conf']['root_cache_opts']['compress_program'] = ''\n\
+        config_opts['plugin_conf']['root_cache_opts']['extension'] = ''\n\
+        config_opts['plugin_conf']['yum_cache_enable'] = False\n\
+        " > /etc/mock/site-defaults.cfg && \
+        echo -e "\
+        config_opts['chroot_setup_cmd'] = 'install @buildsys-build /usr/bin/pigz /usr/bin/lbzip2'\n\
+        config_opts['macros']['%__gzip'] = '/usr/bin/pigz'\n\
+        config_opts['macros']['%__bzip2'] = '/usr/bin/lbzip2'\n\
+        " >> /etc/mock/epel-7-x86_64.cfg && \
+            sed -i 's/mockcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)/mockcmd)/' /usr/bin/mockchain && \
+            sed -i 's/log.error("Namespace unshare failed.")/log.error("Namespace unshare failed."); return/' /usr/sbin/mock && \
+            sed -i 's/self.mounts = mounts.Mounts(self)/self.mounts = mounts.Mounts(self); self.mounts.mounts = []/' /usr/lib/python2.7/site-packages/mockbuild/buildroot.py && \
+            /usr/bin/mock --root=epel-7-x86_64 --init --verbose && \
+            /usr/bin/mock --root=epel-7-x86_64 --clean && \
+            sed -i 's/self.mounts.mounts = \[\]//' /usr/lib/python2.7/site-packages/mockbuild/buildroot.py
         USER jenkins
     strategy:
       type: Docker
@@ -46,18 +71,9 @@ items:
         from:
           kind: DockerImage
           name: openshift/jenkins-slave-base-centos7
+        noCache: true
     triggers:
     - type: ConfigChange
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: rpmbuilder-cache
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: 10Gi
 - apiVersion: v1
   kind: ConfigMap
   data:
@@ -66,14 +82,9 @@ items:
         <name>jenkins-slave-rpmbuilder-centos7</name>
         <instanceCap>2147483647</instanceCap>
         <idleMinutes>0</idleMinutes>
-        <label>rpmbuilder</label>
+        <label>rpmbuilder-centos7</label>
         <serviceAccount>jenkins</serviceAccount>
         <volumes>
-          <org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
-            <mountPath>/var/cache/mock</mountPath>
-            <claimName>rpmbuilder-cache</claimName>
-            <readOnly>false</readOnly>
-          </org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
           <org.csanchez.jenkins.plugins.kubernetes.volumes.EmptyDirVolume>
             <mountPath>/var/lib/mock/</mountPath>
             <memory>true</memory>
@@ -82,7 +93,7 @@ items:
         <containers>
           <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
             <name>jnlp</name>
-            <image>172.30.1.1:5000/rpm-example/jenkins-slave-rpmbuilder-centos7</image>
+            <image>172.30.1.1:5000/rpm-example/jenkins-slave-rpmbuilder-centos7:latest</image>
             <privileged>true</privileged>
             <alwaysPullImage>false</alwaysPullImage>
             <workingDir>/tmp</workingDir>
@@ -97,6 +108,28 @@ items:
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
   metadata:
-    name: rpmbuilder
+    name: jenkins-slave-rpmbuilder-centos7
     labels:
       role: jenkins-slave
+- apiVersion: batch/v2alpha1
+  kind: CronJob
+  metadata:
+    name: jenkins-slave-rpmbuilder-centos7-rebuild
+  spec:
+    schedule: "0 0 * * Mon"
+    jobTemplate:
+      spec:
+        backoffLimit: 3
+        completions: 1
+        parallelism: 1
+        template:
+          metadata:
+            labels:
+              parent: jenkins-slave-rpmbuilder-centos7-rebuild
+          spec:
+            containers:
+            - name: jenkins-slave-rpmbuilder-centos7-rebuild
+              image: openshift/origin
+              command: ["oc",  "start-build", "jenkins-slave-rpmbuilder-centos7"]
+            restartPolicy: Never
+            serviceAccount: jenkins

@@ -1,10 +1,12 @@
-#!/bin/sh -ex
+#!/bin/bash -ex
 
-function create {
-    oc login -u system:admin
+create() {
     # rpmbuilder needs to run as a privileged container 
     # for mock to do chroot and mounts
+    oc login -u system:admin
     oc adm policy add-scc-to-user privileged system:serviceaccount:rpm-example:jenkins
+    #oc adm policy add-scc-to-user anyuid system:serviceaccount:rpm-example:jenkins
+
     oc login -u developer
     oc new-project rpm-example
 
@@ -15,15 +17,18 @@ function create {
     # Sometimes we get OOM on Jenkins with default 512Mi limit
     #oc patch deploymentconfig jenkins -p '{"spec":{"template":{"spec":{"containers":[{"name":"jenkins","resources":{"limits":{"memory":"1Gi"}}}]}}}}'
 
-    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml --param=HOSTNAME=gogs.172.17.0.1.nip.io
+    subdomain="$(oc get route jenkins --template={{.spec.host}} | sed 's/^[^.]*\.//')"
+    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml --param=HOSTNAME="gogs-rpm-example.$subdomain"
+    oc rollout status -w dc/gogs
+    create_gogs_user
 }
 
-function create_gogs_user {
+create_gogs_user() {
     ENDPOINT=`oc get route gogs --template={{.spec.host}}`
     curl "http://$ENDPOINT/user/sign_up" --data 'user_name=developer&password=developer&retype=developer&email=nobody@127.0.0.1'
 }
 
-function delete {
+delete() {
     oc delete project rpm-example
 }
 
