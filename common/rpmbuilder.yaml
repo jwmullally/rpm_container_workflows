@@ -35,7 +35,8 @@ items:
         #       -> Make mockchain reuse pre "--init" root
         #          or make mock plugin for non-tar'd root caching
         #          or untar and set /usr/local/bin/configure-slave to re-tar
-        RUN yum -v repolist enabled && \
+        RUN sed -i 's/enabled\s*=\s*1/enabled = 0/' /etc/yum/pluginconf.d/fastestmirror.conf && \
+            yum -v repolist enabled && \
             yum install -y \
                 make \
                 rpm-build \
@@ -52,6 +53,7 @@ items:
         config_opts['plugin_conf']['root_cache_opts']['compress_program'] = ''\n\
         config_opts['plugin_conf']['root_cache_opts']['extension'] = ''\n\
         config_opts['plugin_conf']['yum_cache_enable'] = False\n\
+        config_opts['yum_common_opts'] = ['--disableplugin=fastestmirror']\n\
         " > /etc/mock/site-defaults.cfg && \
         echo -e "\
         config_opts['chroot_setup_cmd'] = 'install @buildsys-build /usr/bin/pigz /usr/bin/lbzip2'\n\

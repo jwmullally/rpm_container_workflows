@@ -105,4 +105,8 @@ items:
         uri: "http://gogs.rpm-example.svc.cluster.local:3000/developer/demo_container.git"
     strategy:
       jenkinsPipelineStrategy: {}
-  type: JenkinsPipeline
+      type: JenkinsPipeline
+    triggers:
+    - generic:
+        secret: 0123abcd
+      type: Generic

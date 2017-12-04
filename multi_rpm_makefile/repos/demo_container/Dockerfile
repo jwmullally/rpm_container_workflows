@@ -1,6 +1,7 @@
 FROM centos:7
 COPY */*.rpm /tmp/rpms/
-RUN yum install -y epel-release && \
+RUN sed -i 's/enabled\s*=\s*1/enabled = 0/' /etc/yum/pluginconf.d/fastestmirror.conf && \
+    yum install -y epel-release && \
     yum -v repolist enabled && \
     yum install -y \
         uwsgi \
