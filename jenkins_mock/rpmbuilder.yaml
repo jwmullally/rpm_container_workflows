@@ -95,7 +95,7 @@ items:
         <containers>
           <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
             <name>jnlp</name>
-            <image>172.30.1.1:5000/rpm-example/jenkins-slave-rpmbuilder-centos7:latest</image>
+            <image>172.30.1.1:5000/ex-jenkins-mock/jenkins-slave-rpmbuilder-centos7:latest</image>
             <privileged>true</privileged>
             <alwaysPullImage>false</alwaysPullImage>
             <workingDir>/tmp</workingDir>

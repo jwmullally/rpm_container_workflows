@@ -1,7 +1,6 @@
 #!/bin/sh -ex
 
 function create {
-    oc project rpm-example
     oc create -f hello.yaml
     create_repos
 }

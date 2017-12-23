@@ -121,7 +121,7 @@ items:
                 checkout([
                   $class: 'GitSCM',
                   branches: [[name: '*/master']],
-                  userRemoteConfigs: [[url: 'http://gogs.rpm-example.svc.cluster.local:3000/developer/hello.git']]
+                  userRemoteConfigs: [[url: 'http://gogs.ex-jenkins-mock.svc.cluster.local:3000/developer/hello.git']]
                 ])
               }
             }

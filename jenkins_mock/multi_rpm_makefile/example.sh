@@ -1,13 +1,13 @@
 #!/bin/sh -ex
 
 function create {
-    oc project rpm-example
     oc create -f demo-container.yaml
     create_repos
 }
 
 function create_repos {
-    ENDPOINT=`oc get route gogs --template={{.spec.host}}`
+    ENDPOINT="$(oc get route gogs --template={{.spec.host}})"
+    PROJECT="$(oc project -q)"
     WEBHOOK_SECRET="$(oc get buildconfig demo-container-pipeline --template '{{(index .spec.triggers 0).generic.secret}}')"
     pushd repos
     for pkg in *; do
@@ -22,7 +22,7 @@ function create_repos {
 {
     "type": "gogs",
     "config": {
-        "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/rpm-example/buildconfigs/demo-container-pipeline/webhooks/$WEBHOOK_SECRET/generic",
+        "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$PROJECT/buildconfigs/demo-container-pipeline/webhooks/$WEBHOOK_SECRET/generic",
         "content_type": "json"
     },
     "events": [
