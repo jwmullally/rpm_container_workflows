@@ -10,7 +10,8 @@ create() {
     oc login -u developer
     oc new-project ex-jenkins-mock
 
-    oc create -f rpmbuilder.yaml
+    oc apply -f kubeobjs
+
     oc new-app jenkins-persistent # or jenkins-ephemeral
     # Sometimes we get OOM on Jenkins with default 512Mi limit
     #oc patch deploymentconfig jenkins -p '{"spec":{"template":{"spec":{"containers":[{"name":"jenkins","resources":{"limits":{"memory":"1Gi"}}}]}}}}'

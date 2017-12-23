@@ -1,0 +1,37 @@
+apiVersion: v1
+data:
+  template1: |-
+    <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+      <name>jenkins-slave-rpmbuilder-centos7</name>
+      <instanceCap>2147483647</instanceCap>
+      <idleMinutes>0</idleMinutes>
+      <label>rpmbuilder-centos7</label>
+      <serviceAccount>jenkins</serviceAccount>
+      <volumes>
+        <org.csanchez.jenkins.plugins.kubernetes.volumes.EmptyDirVolume>
+          <mountPath>/var/lib/mock/</mountPath>
+          <memory>true</memory>
+        </org.csanchez.jenkins.plugins.kubernetes.volumes.EmptyDirVolume>
+      </volumes>
+      <containers>
+        <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+          <name>jnlp</name>
+          <image>172.30.1.1:5000/ex-jenkins-mock/jenkins-slave-rpmbuilder-centos7:latest</image>
+          <privileged>true</privileged>
+          <alwaysPullImage>false</alwaysPullImage>
+          <workingDir>/tmp</workingDir>
+          <command></command>
+          <args>${computer.jnlpmac} ${computer.name}</args>
+          <ttyEnabled>false</ttyEnabled>
+          <envVars/>
+        </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+      </containers>
+      <envVars/>
+      <annotations/>
+      <imagePullSecrets/>
+    </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+kind: ConfigMap
+metadata:
+  labels:
+    role: jenkins-slave
+  name: jenkins-slave-rpmbuilder-centos7

@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  annotations:
+    description: Custom Jenkins builder bundled with RPM build tools
+  name: jenkins-slave-rpmbuilder-centos7
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'jenkins-slave-rpmbuilder-centos7:latest'
+  source:
+    dockerfile: |
+      FROM openshift/jenkins-slave-base-centos7
+      USER root
+      # Install mock
+      #   mock speed optimizations
+      #   Let mock output directly to stdout,stderr under mockchain
+      #   Fix mock namespace unshare exception under Docker (fixed in 1.3.2-1)
+      #
+      # Make a mock root cache that can be used for every build
+      # TODO: This produces a tar file which bloats docker layers
+      #       -> Make mockchain reuse pre "--init" root
+      #          or make mock plugin for non-tar'd root caching
+      #          or untar and set /usr/local/bin/configure-slave to re-tar
+      RUN sed -i 's/enabled\s*=\s*1/enabled = 0/' /etc/yum/pluginconf.d/fastestmirror.conf && \
+          yum -v repolist enabled && \
+          yum install -y \
+              make \
+              rpm-build \
+              nosync \
+              nosync.x86 \
+              mock && \
+          yum clean all -y && \
+          adduser jenkins && \
+          usermod -a -G root jenkins && \
+          usermod -a -G mock jenkins && \
+          echo -e "\
+      config_opts['nosync'] = True\n\
+      config_opts['nosync_force'] = True\n\
+      config_opts['plugin_conf']['root_cache_opts']['compress_program'] = ''\n\
+      config_opts['plugin_conf']['root_cache_opts']['extension'] = ''\n\
+      config_opts['plugin_conf']['yum_cache_enable'] = False\n\
+      config_opts['yum_common_opts'] = ['--disableplugin=fastestmirror']\n\
+      " > /etc/mock/site-defaults.cfg && \
+      echo -e "\
+      config_opts['chroot_setup_cmd'] = 'install @buildsys-build /usr/bin/pigz /usr/bin/lbzip2'\n\
+      config_opts['macros']['%__gzip'] = '/usr/bin/pigz'\n\
+      config_opts['macros']['%__bzip2'] = '/usr/bin/lbzip2'\n\
+      " >> /etc/mock/epel-7-x86_64.cfg && \
+          sed -i 's/mockcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)/mockcmd)/' /usr/bin/mockchain && \
+          sed -i 's/log.error("Namespace unshare failed.")/log.error("Namespace unshare failed."); return/' /usr/sbin/mock && \
+          sed -i 's/self.mounts = mounts.Mounts(self)/self.mounts = mounts.Mounts(self); self.mounts.mounts = []/' /usr/lib/python2.7/site-packages/mockbuild/buildroot.py && \
+          /usr/bin/mock --root=epel-7-x86_64 --init --verbose && \
+          /usr/bin/mock --root=epel-7-x86_64 --clean && \
+          sed -i 's/self.mounts.mounts = \[\]//' /usr/lib/python2.7/site-packages/mockbuild/buildroot.py
+      USER jenkins
+  strategy:
+    type: Docker
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: openshift/jenkins-slave-base-centos7
+      noCache: true
+  triggers:
+  - type: ConfigChange

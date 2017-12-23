@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: jenkins-slave-rpmbuilder-centos7
+  # For automatic Jenkins detection, uncomment and delete ConfigMap
+  #labels:
+  #  role: jenkins-slave
+  #annotations:
+  #  slave-label: rpmbuilder-centos7
