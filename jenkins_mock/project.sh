@@ -15,19 +15,15 @@ create() {
     oc new-app jenkins-persistent # or jenkins-ephemeral
     # Sometimes we get OOM on Jenkins with default 512Mi limit
     #oc patch deploymentconfig jenkins -p '{"spec":{"template":{"spec":{"containers":[{"name":"jenkins","resources":{"limits":{"memory":"1Gi"}}}]}}}}'
-}
 
-create_gogs() {
-    SUBDOMAIN="$(oc get route jenkins --template={{.spec.host}} | sed 's/^[^.]*\.//')"
-    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml --param=HOSTNAME="gogs.$SUBDOMAIN" -o yaml | oc apply -f-
-    sleep 3
-    oc export configmap gogs-config | sed "s/SKIP_TLS_VERIFY = false/SKIP_TLS_VERIFY = true/" | oc apply -f-
-    oc rollout cancel dc/gogs
-    sleep 3
-    oc rollout latest dc/gogs
+    # Deploy a GOGs instance for hosting example git repositories
+    PROJDOMAIN="$(oc get route jenkins --template={{.spec.host}} | sed 's/^[^-]*\-//')"
+    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml --param=HOSTNAME="gogs-$PROJDOMAIN" -o yaml |
+        sed "s/SKIP_TLS_VERIFY = false/SKIP_TLS_VERIFY = true/" |
+        oc apply -f-
     oc rollout status -w dc/gogs
-    ENDPOINT=`oc get route gogs --template={{.spec.host}}`
-    curl "http://$ENDPOINT/user/sign_up" --data 'user_name=developer&password=developer&retype=developer&email=nobody@127.0.0.1'
+    GOGS_ENDPOINT=`oc get route gogs --template={{.spec.host}}`
+    curl "http://$GOGS_ENDPOINT/user/sign_up" --data 'user_name=developer&password=developer&retype=developer&email=nobody@127.0.0.1'
 }
 
 delete() {
@@ -38,13 +34,10 @@ case $1 in
     create)
         create
         ;;
-    create-gogs)
-        create_gogs
-        ;;
     delete)
         delete
         ;;
     *)
-        echo "$0 create|create-gogs|delete"
+        echo "$0 create|delete"
         ;;
 esac
