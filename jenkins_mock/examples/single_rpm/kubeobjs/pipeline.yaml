@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: hello-container-pipeline
+  labels:
+    app: hello-container
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "hello-container", "namespace": "", "kind": "DeploymentConfig"}]'
+spec:
+  strategy:
+    jenkinsPipelineStrategy:
+      jenkinsfile: |-
+        node('rpmbuilder-centos7') {
+
+          stage('checkout-source') {
+            dir('hello') {
+              checkout([
+                $class: 'GitSCM',
+                branches: [[name: '*/master']],
+                userRemoteConfigs: [[url: 'http://gogs.ex-jenkins-mock.svc.cluster.local:3000/developer/hello.git']]
+              ])
+            }
+          }
+
+          stage('build-srpm') {
+            sh 'mkdir srpms'
+            dir('hello') {
+              sh 'make -f Makefile.srpm'
+              sh 'cp -n build/SRPMS/*.src.rpm ../srpms/'
+            }
+            archiveArtifacts artifacts: 'srpms/*.src.rpm'
+          }
+
+          stage('build-rpm') {
+            sh '/usr/bin/mock --root=epel-7-x86_64 --verbose srpms/*.src.rpm'
+            dir('/var/lib/mock/epel-7-x86_64') {
+              archiveArtifacts artifacts: 'result/*'
+            }
+          }
+
+          stage('build-image') {
+            openshift.withCluster() {
+              openshift.startBuild("hello-container --from-dir /var/lib/mock/epel-7-x86_64/result --wait")
+            }
+          }
+        }
+type: JenkinsPipeline

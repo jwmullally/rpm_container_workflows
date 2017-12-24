@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: hello-container
+  labels:
+    app: hello-container
+spec:
+  to:
+    kind: Service
+    name: hello-container

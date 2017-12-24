@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: demo-container
+  labels:
+    app: demo-container
+spec:
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - demo-container
+        from:
+          kind: ImageStreamTag
+          name: demo-container:latest
+  replicas: 1
+  selector:
+    app: demo-container
+    deploymentconfig: demo-container
+  template:
+    metadata:
+      labels:
+        app: demo-container
+        deploymentconfig: demo-container
+      name: demo-container
+    spec:
+      containers:
+        - name: demo-container
+          image: ' '
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              scheme: HTTP

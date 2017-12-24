@@ -1,7 +1,7 @@
 #!/bin/sh -ex
 
 function create {
-    oc create -f demo-container.yaml
+    oc create -f kubeobjs
     create_repos
 }
 

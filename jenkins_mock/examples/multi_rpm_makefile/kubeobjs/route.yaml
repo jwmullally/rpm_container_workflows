@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: demo-container
+  labels:
+    app: demo-container
+spec:
+  to:
+    kind: Service
+    name: demo-container
+

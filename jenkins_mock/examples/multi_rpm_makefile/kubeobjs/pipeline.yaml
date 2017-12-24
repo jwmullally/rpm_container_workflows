@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: demo-container-pipeline
+  labels:
+    app: demo-container
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "demo-container", "namespace": "", "kind": "DeploymentConfig"}]'
+spec:
+  source:
+    type: Git
+    git:
+      uri: "http://gogs.ex-jenkins-mock.svc.cluster.local:3000/developer/demo_container.git"
+  strategy:
+    jenkinsPipelineStrategy: {}
+    type: JenkinsPipeline
+  triggers:
+  - generic:
+      secret: 0123abcd
+    type: Generic
