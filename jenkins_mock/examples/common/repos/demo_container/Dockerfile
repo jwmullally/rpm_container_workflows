@@ -1,13 +1,15 @@
 FROM centos:7
-COPY */*.rpm /tmp/rpms/
+COPY yum_repo /tmp/yum_repo
 RUN sed -i 's/enabled\s*=\s*1/enabled = 0/' /etc/yum/pluginconf.d/fastestmirror.conf && \
+    yum-config-manager --nogpgcheck --add-repo=file:///tmp/yum_repo && \
+    echo "gpgcheck=0" >> /etc/yum.repos.d/tmp_yum_repo.repo && \
     yum install -y epel-release && \
     yum -v repolist enabled && \
     yum install -y \
         uwsgi \
         uwsgi-plugin-python \
-        /tmp/rpms/python2-hello_lib-*.rpm \
-        /tmp/rpms/python2-demo_app-*.rpm && \
+        python2-hello_lib \
+        python2-demo_app && \
     yum clean all -y && \
     rpm -q \
         uwsgi \

@@ -5,8 +5,8 @@ all: image
 repos:
 	rm -rf _repos
 	mkdir _repos
-	cd _repos && git clone "http://developer:developer@${GOGS_ENDPOINT}/developer/python-hello_lib.git"
-	cd _repos && git clone "http://developer:developer@${GOGS_ENDPOINT}/developer/python-demo_app.git"
+	cd _repos && git clone "http://${GOGS_ENDPOINT}/developer/python-hello_lib.git"
+	cd _repos && git clone "http://${GOGS_ENDPOINT}/developer/python-demo_app.git"
 	mv _repos repos
 
 srpms: repos $(shell find repos -type f)
@@ -23,7 +23,7 @@ rpms: srpms
 		srpms/python-hello_lib-*.src.rpm \
 		srpms/python-demo_app-*.src.rpm
 	mkdir _rpms
-	cp -rv /tmp/mockchain/results/epel-7-x86_64/* _rpms
+	cp -rv /tmp/mockchain/results/epel-7-x86_64 _rpms/yum_repo
 	mv _rpms rpms
 
 image: rpms Dockerfile

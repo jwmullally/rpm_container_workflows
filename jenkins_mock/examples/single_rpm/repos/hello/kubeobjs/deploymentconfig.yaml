@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: DeploymentConfig
 metadata:
-  name: demo-container
+  name: single-rpm
   labels:
-    app: demo-container
+    app: single-rpm
 spec:
   triggers:
     - type: ConfigChange
@@ -11,23 +11,23 @@ spec:
       imageChangeParams:
         automatic: true
         containerNames:
-          - demo-container
+          - single-rpm
         from:
           kind: ImageStreamTag
-          name: demo-container:latest
+          name: single-rpm:latest
   replicas: 1
   selector:
-    app: demo-container
-    deploymentconfig: demo-container
+    app: single-rpm
+    deploymentconfig: single-rpm
   template:
     metadata:
       labels:
-        app: demo-container
-        deploymentconfig: demo-container
-      name: demo-container
+        app: single-rpm
+        deploymentconfig: single-rpm
+      name: single-rpm
     spec:
       containers:
-        - name: demo-container
+        - name: single-rpm
           image: ' '
           ports:
             - containerPort: 8000

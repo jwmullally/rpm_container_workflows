@@ -1,7 +1,8 @@
-#!/bin/sh -ex
+#!/bin/bash 
+set -euxo pipefail
 
 function test_response {
-    RESPONSE=`curl -vsS "http://$ENDPOINT/"`
+    RESPONSE=`curl -vsS --connect-timeout 10 --retry 3 "http://$ENDPOINT/"`
     if [ "$RESPONSE" != "Hello, World!" ]; then
         echo "Test fail" 1>&2
         exit 1

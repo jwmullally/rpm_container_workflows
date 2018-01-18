@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: multi-rpm
+  labels:
+    app: multi-rpm
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'multi-rpm:latest'
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: centos:7

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: single-rpm-pipeline
+  labels:
+    app: single-rpm
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "single-rpm", "namespace": "", "kind": "DeploymentConfig"}]'
+spec:
+  source:
+    git:
+      uri: 'http://gogs.rpm-jenkins-mock.svc.cluster.local:3000/developer/hello.git'
+  strategy:
+    jenkinsPipelineStrategy: {}
+  triggers:
+    - generic:
+        secret: abc123
+      type: Generic
+type: JenkinsPipeline

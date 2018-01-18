@@ -4,7 +4,7 @@ node('rpmbuilder-centos7') {
     checkout([
       $class: 'GitSCM',
       branches: [[name: '*/master']],
-      userRemoteConfigs: [[url: 'http://gogs.ex-jenkins-mock.svc.cluster.local:3000/developer/demo_container.git']]
+      userRemoteConfigs: [[url: 'http://gogs.rpm-jenkins-mock.svc.cluster.local:3000/developer/demo_container.git']]
     ])
     sh 'make repos'
   }
@@ -22,13 +22,13 @@ node('rpmbuilder-centos7') {
   stage('build-image') {
     openshift.withCluster() {
       sh 'cp -n Dockerfile rpms/'
-      openshift.startBuild("demo-container --from-dir rpms --wait")
+      openshift.startBuild("multi-rpm --from-dir rpms --wait")
     }
   }
 
   stage('test-image') {
     openshift.withCluster() {
-      sh './test.sh demo-container:8000'
+      sh './test.sh multi-rpm:8000'
     }
   }
 }

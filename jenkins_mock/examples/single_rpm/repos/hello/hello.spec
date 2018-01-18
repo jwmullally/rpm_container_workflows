@@ -1,30 +1,37 @@
 Name:           hello
 Version:        1.0
 Release:        1%{?dist}
-Summary:        Simple Hello World application
+Summary:        Example Hello World CGI application
 License:        Public Domain
-Source0:        hello.tar.gz
+URL:            https://git.example.org/hello
+Source0:        %{name}-%{version}.tar.gz
 
-BuildRequires: gcc
-BuildRequires: make
+BuildRequires:  gcc
+BuildRequires:  make
+
+Requires:       python
 
 %description 
-Example "Hello World" program.
+Example Hello World CGI application.
 
 %prep
-%autosetup -n hello/src
+%autosetup
 
 %build
+cd src
 make
 
 %install
+cd src
 make install DESTDIR=%{buildroot}
 
 %check
+cd src
 make test
 
 %files
 /usr/bin/*
+/var/www/*
 
 %changelog
 * Tue Sep 06 2011 John Hancock <johnh@example.com>

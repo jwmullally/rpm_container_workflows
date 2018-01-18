@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Route
 metadata:
-  name: demo-container
+  name: multi-rpm
   labels:
-    app: demo-container
+    app: multi-rpm
 spec:
   to:
     kind: Service
-    name: demo-container
+    name: multi-rpm
 

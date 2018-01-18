@@ -1,36 +1,33 @@
 #!/bin/bash 
 set -euxo pipefail
 
+source ../common/common.sh
+
 create() {
-    # rpmbuilder needs to run as a privileged container 
-    # for mock to do chroot and mounts
+    echo "WARNING: jenkins-slave-rpmbuilder-centos7 needs to run as a privileged"
+    echo "container (CAP_SYS_ADMIN) for mock to do chroot and mounts."
+    echo "==> This script will add scc privilege to project jenkins user."
+    read -p "Press enter to continue, or CTRL+C to abort"
     oc login -u system:admin
-    oc adm policy add-scc-to-user privileged system:serviceaccount:ex-jenkins-mock:jenkins
+    oc adm policy add-scc-to-user privileged system:serviceaccount:rpm-jenkins-mock:jenkins
 
     oc login -u developer
-    oc new-project ex-jenkins-mock
+    oc get project rpm-jenkins-mock || oc new-project rpm-jenkins-mock
 
     oc apply -f kubeobjs
 
-    oc new-app jenkins-persistent # or jenkins-ephemeral
+    oc new-app jenkins-persistent -o yaml | oc apply -f- # or jenkins-ephemeral
     # Sometimes we get OOM on Jenkins with default 512Mi limit
     #oc patch deploymentconfig jenkins -p '{"spec":{"template":{"spec":{"containers":[{"name":"jenkins","resources":{"limits":{"memory":"1Gi"}}}]}}}}'
 
-    # Deploy a GOGs instance for hosting example git repositories
-    PROJDOMAIN="$(oc get route jenkins --template={{.spec.host}} | sed 's/^[^-]*\-//')"
-    oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml --param=HOSTNAME="gogs-$PROJDOMAIN" -o yaml |
-        sed "s/SKIP_TLS_VERIFY = false/SKIP_TLS_VERIFY = true/" |
-        oc apply -f-
-    oc rollout status -w dc/gogs
-    GOGS_ENDPOINT=`oc get route gogs --template={{.spec.host}}`
-    curl "http://$GOGS_ENDPOINT/user/sign_up" --data 'user_name=developer&password=developer&retype=developer&email=nobody@127.0.0.1'
+    gogs_deploy
 }
 
 delete() {
-    oc delete project ex-jenkins-mock
+    oc delete project rpm-jenkins-mock
 }
 
-case $1 in
+case "${1:-}" in
     create)
         create
         ;;
@@ -38,6 +35,7 @@ case $1 in
         delete
         ;;
     *)
-        echo "$0 create|delete"
+        echo "Usage: $0 create|delete"
+        exit 1
         ;;
 esac

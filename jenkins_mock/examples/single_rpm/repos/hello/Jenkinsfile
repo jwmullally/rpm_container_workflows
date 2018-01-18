@@ -1,0 +1,29 @@
+node('rpmbuilder-centos7') {
+
+  stage('checkout-source') {
+    checkout([
+      $class: 'GitSCM',
+      branches: [[name: '*/master']],
+      userRemoteConfigs: [[url: 'http://gogs.rpm-jenkins-mock.svc.cluster.local:3000/developer/hello.git']]
+    ])
+  }
+
+  stage('build-srpm') {
+    sh 'make -f Makefile.srpm'
+    archiveArtifacts artifacts: 'rpmbuild/SRPMS/*.src.rpm'
+  }
+
+  stage('build-rpm') {
+    sh '/usr/bin/mock --root=epel-7-x86_64 --verbose rpmbuild/SRPMS/*.src.rpm'
+    dir('/var/lib/mock/epel-7-x86_64') {
+      archiveArtifacts artifacts: 'result/*'
+    }
+  }
+
+  stage('build-image') {
+    openshift.withCluster() {
+      sh 'cp Dockerfile /var/lib/mock/epel-7-x86_64/result'
+      openshift.startBuild("single-rpm --from-dir /var/lib/mock/epel-7-x86_64/result --wait")
+    }
+  }
+}

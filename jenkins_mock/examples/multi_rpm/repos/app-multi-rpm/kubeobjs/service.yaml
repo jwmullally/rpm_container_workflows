@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: demo-container
+  name: multi-rpm
   labels:
-    app: demo-container
+    app: multi-rpm
 spec:
   ports:
     - name: 8000-tcp
@@ -11,5 +11,5 @@ spec:
       port: 8000
       targetPort: 8000
   selector:
-    app: demo-container
-    deploymentconfig: demo-container
+    app: multi-rpm
+    deploymentconfig: multi-rpm

@@ -22,3 +22,13 @@ TODO: OpenShiftSync plugin removes the rpmbuilder template when the initial imag
 
 $ oc get istag jenkins-slave-rpmbuilder-centos7:latest --template={{.metadata.creationTimestamp}}; echo
     2017-06-30T17:12:19Z
+
+possibly when any build is done?
+
+===================
+
+jenkins high CPU and non-response after visiting UI
+
+top with "Shift+H" thread usage and "kill -3" or jstack <java PID> shows 4 GC threads running full CPU for ~10minutes
+
+Resolves itself eventually, or after restart
