@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: multi-rpm-imagesource-repo
+  name: multi-rpm-imagesource-repo
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: multi-rpm-imagesource-repo:latest
+  source:
+    type: Binary
+    dockerfile: |
+      FROM scratch
+      COPY yum_repo /yum_repo
+  strategy:
+    type: Docker
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: scratch

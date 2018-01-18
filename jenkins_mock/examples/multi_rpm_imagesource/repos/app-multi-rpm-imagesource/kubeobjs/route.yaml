@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: multi-rpm-imagesource
+  labels:
+    app: multi-rpm-imagesource
+spec:
+  to:
+    kind: Service
+    name: multi-rpm-imagesource
+

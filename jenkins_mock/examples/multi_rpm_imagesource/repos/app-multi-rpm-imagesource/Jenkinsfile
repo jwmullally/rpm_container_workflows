@@ -1,0 +1,36 @@
+node('rpmbuilder-centos7') {
+
+  stage('checkout-sources') {
+    checkout([
+      $class: 'GitSCM',
+      branches: [[name: '*/master']],
+      userRemoteConfigs: [[url: 'http://gogs.rpm-jenkins-mock.svc.cluster.local:3000/developer/demo_container.git']]
+    ])
+    sh 'make repos'
+  }
+
+  stage('build-srpms') {
+    sh 'make srpms'
+    archiveArtifacts artifacts: 'srpms/'
+  }
+
+  stage('build-rpms') {
+    sh 'make rpms'
+    archiveArtifacts artifacts: 'rpms/'
+    openshift.withCluster() {
+      openshift.startBuild("multi-rpm-imagesource-repo --from-dir rpms --wait")
+    }
+  }
+
+  stage('build-image') {
+    openshift.withCluster() {
+      openshift.startBuild("multi-rpm-imagesource --wait")
+    }
+  }
+
+  stage('test-image') {
+    openshift.withCluster() {
+      sh './test.sh multi-rpm-imagesource:8000'
+    }
+  }
+}
