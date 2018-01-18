@@ -12,8 +12,8 @@ repos:
 srpms: repos $(shell find repos -type f)
 	rm -rf _srpms srpms
 	mkdir _srpms
-	cd repos/python-hello_lib && make -f Makefile.srpm && cp -v build/SRPMS/*.src.rpm ../../_srpms
-	cd repos/python-demo_app && make -f Makefile.srpm && cp -v build/SRPMS/*.src.rpm ../../_srpms
+	cd repos/python-hello_lib && make -f Makefile.srpm && cp -v rpmbuild/SRPMS/*.src.rpm ../../_srpms
+	cd repos/python-demo_app && make -f Makefile.srpm && cp -v rpmbuild/SRPMS/*.src.rpm ../../_srpms
 	mv _srpms srpms
 
 rpms: srpms

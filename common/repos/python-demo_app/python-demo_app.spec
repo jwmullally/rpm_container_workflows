@@ -5,7 +5,7 @@ Version:        1.0
 Release:        1%{?dist}
 Summary:        Simple Flask Demo application
 License:        Public Domain
-Source0:        python-%{pypi_name}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
  
 BuildRequires:  python2-devel
@@ -48,7 +48,7 @@ Simple Flask Demo application
 #Documentation for %{pypi_name}
 
 %prep
-%autosetup -n python-%{pypi_name}
+%autosetup
 
 %build
 %{__python2} setup.py build
