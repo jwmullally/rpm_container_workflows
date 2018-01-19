@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: single-rpm
+  labels:
+    app: single-rpm
+spec:
+  to:
+    kind: Service
+    name: single-rpm

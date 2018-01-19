@@ -1,0 +1,14 @@
+SPEC:=$(shell find . -maxdepth 1 -name "*.spec" -type f)
+PKGNAME:=$(shell rpmspec --srpm --query --queryformat '%{NAME}' "$(SPEC)")
+PKGVER:=$(shell rpmspec --srpm --query --queryformat '%{VERSION}' "$(SPEC)")
+
+srpm: clean
+	mkdir -p rpmbuild/{SOURCES,SPECS}
+	cp $(SPEC) rpmbuild/SPECS/
+	tar --transform "s;^./;$(PKGNAME)-$(PKGVER)/;" \
+		--exclude-vcs --exclude='./rpmbuild' \
+		-zcvf rpmbuild/SOURCES/$(PKGNAME)-$(PKGVER).tar.gz ./
+	rpmbuild --define "_topdir `pwd`/rpmbuild/" -bs rpmbuild/SPECS/$(SPEC)
+
+clean:
+	rm -rf rpmbuild

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: single-rpm
+  labels:
+    app: single-rpm
+spec:
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - single-rpm
+        from:
+          kind: ImageStreamTag
+          name: single-rpm:latest
+  replicas: 1
+  selector:
+    app: single-rpm
+    deploymentconfig: single-rpm
+  template:
+    metadata:
+      labels:
+        app: single-rpm
+        deploymentconfig: single-rpm
+      name: single-rpm
+    spec:
+      containers:
+        - name: single-rpm
+          image: ' '
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              scheme: HTTP
