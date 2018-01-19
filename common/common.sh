@@ -1,5 +1,9 @@
 #!/bin/bash
 set -euxo pipefail
+shopt -s extglob
+
+# Set to "y" to enable webhooks when creating the examples
+WEBHOOKS_ENABLED="n"
 
 gogs_deploy() {
     gogs_gen_endpoint
@@ -35,16 +39,31 @@ gogs_endpoint() {
 gogs_repo_create() {
     REPO="$1"
 
-    gogs_repo_webhook_delete "$REPO"
+    rm -rf ../__gitprep;  cp -rv . ../__gitprep; pushd ../__gitprep
+    rm -rf .git;  git init;  git add .
+    if [ -f .gitmodules ]; then
+        git reset .gitmodules
+        # git doesn't support importing ".gitmodules" :/
+        mv .gitmodules .gitmodules.orig
+        git config -f .gitmodules.orig --get-regexp '^submodule\..*\.path$' |
+            while read path_key path; do
+                url_key="$(echo "$path_key" | sed 's/\.path/.url/')"
+                url="$(git config -f .gitmodules.orig --get "$url_key")"
+                branch_key="$(echo "$path_key" | sed 's/\.path/.branch/')"
+                branch="$(git config -f .gitmodules.orig --get "$branch_key")"
+                git submodule add --branch "$branch" "$url" "$path"
+            done
+    fi
+    git commit -m 'initial commit'
 
+    gogs_repo_webhook_delete "$REPO"
     ENDPOINT="$(oc get route gogs --template={{.spec.host}})"
     PROJECT="$(oc project -q)"
     curl "http://developer:developer@$(gogs_endpoint)/api/v1/user/repos" --data "name=$REPO"
-    rm -rf .git
-    git init && git add . && git commit -m 'initial commit'
     git remote add origin "http://developer:developer@$(gogs_endpoint)/developer/$REPO.git"
     git push -u origin master --force
-    rm -rf .git
+
+    popd; rm -rf ../__gitprep
 }
 
 gogs_repo_delete() {
@@ -56,6 +75,10 @@ gogs_repo_delete() {
 gogs_repo_webhook() {
     REPO="$1"
     BUILDCONFIG="$2"
+
+    if [ "$WEBHOOKS_ENABLED" != "y" ]; then
+        return
+    fi
 
     gogs_repo_webhook_delete "$REPO"
 
@@ -80,6 +103,10 @@ EOF
 
 gogs_repo_webhook_delete() {
     REPO="$1"
+
+    if [ "$WEBHOOKS_ENABLED" != "y" ]; then
+        return
+    fi
 
     HOOK_IDS="$((curl --silent "http://developer:developer@$(gogs_endpoint)/api/v1/repos/developer/$REPO/hooks" | grep -o '"id":[0-9]*' | grep -o '[0-9]*' | tr '\n' ' ') || true)"
     for HOOK_ID in $HOOK_IDS; do
