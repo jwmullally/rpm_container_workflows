@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: multi-rpm
+  labels:
+    app: multi-rpm
+spec:
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - multi-rpm
+        from:
+          kind: ImageStreamTag
+          name: multi-rpm:latest
+  replicas: 1
+  selector:
+    app: multi-rpm
+    deploymentconfig: multi-rpm
+  template:
+    metadata:
+      labels:
+        app: multi-rpm
+        deploymentconfig: multi-rpm
+      name: multi-rpm
+    spec:
+      containers:
+        - name: multi-rpm
+          image: ' '
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              scheme: HTTP
