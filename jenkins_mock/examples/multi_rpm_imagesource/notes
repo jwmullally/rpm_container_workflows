@@ -1,3 +1,0 @@
-We run "rpm -q" to verify packages installed in Docker, as yum won't error if requested packages are missing(!)
-
-During python pkg RPM build, setup.py pulls missing packages from pypi, should error instead
