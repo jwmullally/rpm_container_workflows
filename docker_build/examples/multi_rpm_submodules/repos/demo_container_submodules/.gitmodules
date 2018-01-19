@@ -1,0 +1,8 @@
+[submodule "repos/python-hello_lib"]
+    path = repos/python-hello_lib
+    url = http://gogs.rpm-docker-build.svc.cluster.local:3000/developer/python-hello_lib.git
+    branch = master
+[submodule "repos/python-demo_app"]
+    path = repos/python-demo_app
+    url = http://gogs.rpm-docker-build.svc.cluster.local:3000/developer/python-demo_app.git
+    branch = master

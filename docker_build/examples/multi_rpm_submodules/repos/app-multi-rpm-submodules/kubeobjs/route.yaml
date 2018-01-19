@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: multi-rpm-submodules
+  labels:
+    app: multi-rpm-submodules
+spec:
+  to:
+    kind: Service
+    name: multi-rpm-submodules
+
