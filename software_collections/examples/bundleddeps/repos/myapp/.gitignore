@@ -1,0 +1,6 @@
+venv
+rpmbuild
+dist
+build
+
+*.pyc
