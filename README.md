@@ -103,6 +103,14 @@ TODO: Currently the rpmbuild itself happens as root user (even though it should 
 
 This works like the above, except the RPMs repos are fetched with git submodules instead of from the Makefile.
 
+[docker_build/examples/rpmbuild_chain/](docker_build/examples/rpmbuild_chain/)
+
+Similar to above examples, except using rpmbuild-chain.
+
+[docker_build/examples/rpmbuild_chain_repo/](docker_build/examples/rpmbuild_chain_repo/)
+
+Build the RPMs to a YUM repo, then serve that from a container for use by other builds.
+
 
 ### Building RPMs with mock
 
@@ -118,11 +126,13 @@ Using the same Makefile and Dockerfile, its possible to pull and modify the RPM 
 
 This follows the same pipeline workflow, except the built RPMs are pushed to a seperate artifact image stream, which is then used as an input to the container build.
 
+
 ### Software Collections
 
 [software_collections/examples/bundleddeps/](software_collections/examples/bundleddeps/)
 
 This example demonstrates building a Django app with bundled dependencies. The final product is a monolithic application RPM (along with a few SCL related packages) that installs to its own independent /opt/ folder. The Python runtime is provided by another SCL that we can depend on. Changes to the application and dependencies can all be built and tested locally with "docker build".
+
 
 ## TODO
 
